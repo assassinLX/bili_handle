@@ -8,6 +8,7 @@ from moviepy.editor import VideoFileClip
 import math
 import subprocess
 
+import threading
 
 
 requests.packages.urllib3.disable_warnings()
@@ -139,7 +140,7 @@ def get_time_out(video_time):
 
 def get_current_num(time):
     result_str = ""
-    if time > 10:
+    if time >= 10:
         result_str = str(time)
     else:
         result_str = "0%d" % time
@@ -227,12 +228,26 @@ if __name__ == '__main__':
     User_Mid = 360712084  # 在这里改你的Up主编号
     video_list = get_Mainpage_Video(User_Mid)  # 拿到视频列表
     # print(video_list)  # 看一下你拿到的视频列表
+    threads = []
+
     for cfg in video_list:
         print(cfg['aid'])
         print('\n')
         current_av_id = cfg['aid']
-        setting_and_down_by_av(str(current_av_id))
 
+        current_t = threading.Thread(target=setting_and_down_by_av, args=(str(current_av_id),))
+        current_t.start()
+        threads.append(current_t)
+
+        # setting_and_down_by_av(str(current_av_id))
+
+    # 等待所有线程完成
+    for t in threads:
+        t.join()
+    print('\n\n\n')
+    print('\n\n\n')
+    print("Exiting Main Thread")
+    print('\n\n\n')
 
 
 
