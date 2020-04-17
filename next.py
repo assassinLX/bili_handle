@@ -94,7 +94,9 @@ def CombineVideoAudio(videopath,audiopath,outpath,dirname):
     current_audio_path = currnet_path + audiopath
     current_out_path = currnet_path + outpath
 
-    video_time = math.floor(VideoFileClip(current_video_path).duration)
+    video_file_clip = VideoFileClip(current_video_path)
+    video_time = math.floor(video_file_clip.duration)
+    video_file_clip.close()
     stand_time = get_time_out(video_time)
  
     #将视频、音频剪辑标准时间
