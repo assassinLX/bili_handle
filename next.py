@@ -101,20 +101,29 @@ def CombineVideoAudio(videopath,audiopath,outpath,dirname):
     stand_video_name = 'stand_video.mp4'
     stand_video_path = currnet_path + stand_video_name
     cut_video_cmd = 'ffmpeg -ss 00:00:00 -i '+ current_video_path +' -acodec copy -vcodec copy -t ' + stand_time + ' ' + stand_video_path
-    subprocess.call(cut_video_cmd, shell=True)
- 
+    s_v_p = subprocess.Popen(cut_video_cmd, shell=True)
+    s_v_p.wait()
+
     stand_audio_name = "stand_audio.mp3"
     stand_audio_path = currnet_path + stand_audio_name
     cut_audio_cmd = 'ffmpeg  -i ' + current_audio_path + ' -vn -qscale 0 -ss 00:00:00 -t ' + stand_time + ' ' + stand_audio_path
-    subprocess.call(cut_audio_cmd, shell=True)
- 
+    s_a_p = subprocess.Popen(cut_audio_cmd, shell=True)
+    s_a_p.wait()
+
     combine_cmd = 'ffmpeg.exe -i ' + stand_video_path + ' -i ' + stand_audio_path +  ' -c:v copy -c:a aac -strict experimental ' + current_out_path
-    subprocess.call(combine_cmd, shell=True)
- 
-    os.remove(current_video_path)
-    os.remove(current_audio_path)
-    os.remove(stand_audio_path)
-    os.remove(stand_video_path)
+    p = subprocess.Popen(combine_cmd, shell=True)
+    p.wait()
+
+    if p.returncode == 0 and s_v_p.returncode == 0 and s_a_p.returncode == 0:
+        os.remove(stand_audio_path)
+        os.remove(stand_video_path)
+        os.remove(current_audio_path)
+        os.remove(current_video_path)
+
+
+
+
+
 
 
 def get_time_out(video_time):

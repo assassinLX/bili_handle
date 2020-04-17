@@ -1,29 +1,19 @@
-import logging
+import threading
 import subprocess
-# to install run `pip install futures` on Python <3.2
-from concurrent.futures import ThreadPoolExecutor as Pool
 
-info = logging.getLogger(__name__).info
-
-def callback(future):
-    if future.exception() is not None:
-        info("got exception: %s" % future.exception())
-    else:
-        info("process returned %d" % future.result())
-
-def main():
-    logging.basicConfig(
-        level=logging.INFO,
-        format=("%(relativeCreated)04d %(process)05d %(threadName)-10s "
-                "%(levelname)-5s %(msg)s"))
-
-    # wait for the process completion asynchronously
-    info("begin waiting")
-    pool = Pool(max_workers=1)
-    f = pool.submit(subprocess.call, "sleep 2; echo done", shell=True)
-    f.add_done_callback(callback)
-    pool.shutdown(wait=False) # no .submit() calls after that point
-    info("continue waiting asynchronously")
-
-if __name__=="__main__":
-    main()
+def popen_and_call(on_exit, popen_args):
+    """
+    Runs the given args in a subprocess.Popen, and then calls the function
+    on_exit when the subprocess completes.
+    on_exit is a callable object, and popen_args is a list/tuple of args that 
+    would give to subprocess.Popen.
+    """
+    def run_in_thread(on_exit, popen_args):
+        proc = subprocess.Popen(*popen_args)
+        proc.wait()
+        on_exit()
+        return
+    thread = threading.Thread(target=run_in_thread, args=(on_exit, popen_args))
+    thread.start()
+    # returns immediately after the thread starts
+    return thread
