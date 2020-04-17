@@ -18,7 +18,7 @@ headers = {
 }
 
 
-def GetBiliVideo(homeurl,num,session=requests.session()):
+def GetBiliVideo(bv,homeurl,num,session=requests.session()):
     res = session.get(url=homeurl, headers=headers, verify=False)
     html = etree.HTML(res.content)
     videoinforms = str(html.xpath('//head/script[3]/text()')[0])[20:]
@@ -65,16 +65,16 @@ def GetBiliVideo(homeurl,num,session=requests.session()):
 def BiliBiliDownload(homeurl,url, name, session=requests.session()):
     headers.update({'Referer': homeurl})
     session.options(url=url, headers=headers,verify=False)
-    # 每次下载1M的数据
+    # 1M
     begin = 0
-    end = 512*512-1
+    end = 1024*512-1
     flag=0
     while True:
         headers.update({'Range': 'bytes='+str(begin) + '-' + str(end)})
         res = session.get(url=url, headers=headers,verify=False)
         if res.status_code != 416:
             begin = end + 1
-            end = end + (512*512 - 1)
+            end = end + 1024*512
         else:
             headers.update({'Range': str(end + 1) + '-'})
             res = session.get(url=url, headers=headers,verify=False)
@@ -122,12 +122,6 @@ def CombineVideoAudio(videopath,audiopath,outpath,dirname):
         os.remove(current_audio_path)
         os.remove(current_video_path)
 
-
-
-
-
-
-
 def get_time_out(video_time):
     video_time_stand_str = ""
     if video_time < 60:
@@ -151,6 +145,9 @@ def get_current_num(time):
         result_str = "0%d" % time
     return result_str
 
+
+
+
 # def dec(x):
 # 	r=0
 # 	for i in range(6):
@@ -173,21 +170,69 @@ def get_current_num(time):
     # add=8728348608
 
 
+def setting_and_down(bv_id):
+    url='https://www.bilibili.com/video/'+ bv_id
+    GetBiliVideo(bv_id,url,0)
+
+def setting_and_down_by_av(av):
+    url='https://www.bilibili.com/video/av'+ av
+    name = "av" + av
+    GetBiliVideo(name,url,0)
+
+# 从主页拿视频列表的函数
+def get_Mainpage_Video(User_Mid):
+
+    headers = {
+    'Host': 'space.bilibili.com',
+    'Connection': 'keep-alive',
+    'Accept': 'application/json, text/plain, */*',
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/67.0.3396.99 Safari/537.36',
+    'Referer': 'https://space.bilibili.com/' + str(User_Mid)+ '/',    # 这里是Mid
+    'Accept-Encoding': 'gzip, deflate, br',
+    'Accept-Language': 'zh-CN,zh;q=0.9',
+    }
+    
+    url = 'https://space.bilibili.com/ajax/member/getSubmitVideos?mid='+ str(User_Mid)+'&pagesize=100&tid=0&page=1&keyword=&order=pubdate'
+    # 请求 Url 前面要加上   主机地址！  在这里就是space.xxxxxx   
+    # 注意从浏览器里抓包可以看到完整的地址，而从Fiddler
+    #最大的请求size是100
+    
+    content = requests.get(url, headers = headers, verify = False).json()
+    i = content['data']['count'] # 视频个数
+    if i>=100:
+        i = 100
+        video_List=[]
+        for num in range(i):
+            aid =  content['data']['vlist'][num]['aid']
+            title = content['data']['vlist'][num]['title']
+            author = content['data']['vlist'][num]['author']
+            tmp = {"aid":aid,"title":title,"author":author}
+            video_List.append(tmp)
+        return video_List
+    else:
+        video_List=[]
+        for num in range(i):
+            aid =  content['data']['vlist'][num]['aid']
+            title = content['data']['vlist'][num]['title']
+            author = content['data']['vlist'][num]['author']
+            tmp = {"aid":aid,"title":title,"author":author}
+            video_List.append(tmp)
+        return video_List
+
+
+
+
 if __name__ == '__main__':
-    bv =  "BV1e5411t7bD"
-    print(bv)
-    url='https://www.bilibili.com/video/'+bv
-    GetBiliVideo(url,0)
 
-    # # 视频选集
-    # range_start=input('从第几集开始？')
-    # range_end = input('到第几集结束？')
-    # if int(range_start)<=int(range_end):
-    #     for i in range(int(range_start),int(range_end)+1):
-    #         GetBiliVideo(url+'?p='+str(i),i-1)
+    User_Mid = 360712084  # 在这里改你的Up主编号
+    video_list = get_Mainpage_Video(User_Mid)  # 拿到视频列表
+    # print(video_list)  # 看一下你拿到的视频列表
+    for cfg in video_list:
+        print(cfg['aid'])
+        print('\n')
+        current_av_id = cfg['aid']
+        setting_and_down_by_av(str(current_av_id))
 
-    # else:
-    #     print('选集不合法！')
 
 
 
