@@ -7,7 +7,7 @@ import os
 from moviepy.editor import VideoFileClip
 import math
 import subprocess
-
+import re
 import threading
 
 
@@ -60,8 +60,9 @@ def GetBiliVideo(bv,homeurl,num,session=requests.session()):
     
     
     print('正在组合 "'+ name +'" 的视频和音频····')
-    CombineVideoAudio(name + '_Video.mp4',name + '_Audio.mp3', name + '_output.mp4',dirname)
-    print(' "'+name+'" 下载完成！')
+    real_name = str(html.xpath("//h1/@title")[0])
+    CombineVideoAudio(name + '_Video.mp4',name + '_Audio.mp3', name + '_output.mp4',dirname,real_name)
+    
 
 def BiliBiliDownload(homeurl,url, name, session=requests.session()):
     headers.update({'Referer': homeurl})
@@ -89,7 +90,7 @@ def BiliBiliDownload(homeurl,url, name, session=requests.session()):
             fp.close()
             break
 
-def CombineVideoAudio(videopath,audiopath,outpath,dirname):
+def CombineVideoAudio(videopath,audiopath,outpath,dirname,real_name):
     currnet_path = os.getcwd() + "\\" + dirname + "\\"
     current_video_path = currnet_path + videopath
     current_audio_path = currnet_path + audiopath
@@ -122,6 +123,16 @@ def CombineVideoAudio(videopath,audiopath,outpath,dirname):
         os.remove(stand_video_path)
         os.remove(current_audio_path)
         os.remove(current_video_path)
+        print('\n\n\n')
+        dir_new_name = currnet_path + find_chinese(real_name) + '.mp4'
+        print('\n\n\n')
+        os.rename(current_out_path,dir_new_name)
+        print(find_chinese(real_name)+"下载成功！！")
+
+def find_chinese(file):
+    pattern = re.compile(u"([^\u4e00-\u9fa5\u0030-\u0039\u0041-\u005a\u0061-\u007a])")
+    chinese = re.sub(pattern, '', file)
+    return chinese
 
 def get_time_out(video_time):
     video_time_stand_str = ""
@@ -225,29 +236,31 @@ def get_Mainpage_Video(User_Mid):
 
 if __name__ == '__main__':
 
-    User_Mid = 360712084  # 在这里改你的Up主编号
+    # setting_and_down('BV1BW411d7gb')
+
+    User_Mid = 19593619  # 在这里改你的Up主编号
     video_list = get_Mainpage_Video(User_Mid)  # 拿到视频列表
     # print(video_list)  # 看一下你拿到的视频列表
-    threads = []
+    # threads = []
 
     for cfg in video_list:
         print(cfg['aid'])
         print('\n')
         current_av_id = cfg['aid']
+        setting_and_down_by_av(str(current_av_id))
 
-        current_t = threading.Thread(target=setting_and_down_by_av, args=(str(current_av_id),))
-        current_t.start()
-        threads.append(current_t)
+        # current_t = threading.Thread(target=setting_and_down_by_av, args=(str(current_av_id),))
+        # current_t.start()
+        # threads.append(current_t)
 
-        # setting_and_down_by_av(str(current_av_id))
 
     # 等待所有线程完成
-    for t in threads:
-        t.join()
-    print('\n\n\n')
-    print('\n\n\n')
-    print("Exiting Main Thread")
-    print('\n\n\n')
+    # for t in threads:
+    #     t.join()
+    # print('\n\n\n')
+    # print('\n\n\n')
+    # print("Exiting Main Thread")
+    # print('\n\n\n')
 
 
 
