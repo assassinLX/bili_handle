@@ -19,50 +19,60 @@ headers = {
 }
 
 
-def GetBiliVideo(bv,homeurl,num,session=requests.session()):
+
+def is_json(myjson):
+    try:
+        json.loads(myjson)
+    except ValueError:
+        return False
+    return True
+
+
+
+def GetBiliVideo(User_Mid,bv,homeurl,num,session=requests.session()):
     res = session.get(url=homeurl, headers=headers, verify=False)
     html = etree.HTML(res.content)
     videoinforms = str(html.xpath('//head/script[3]/text()')[0])[20:]
-    videojson = json.loads(videoinforms)
-    # 获取详情信息列表
-    listinform = str(html.xpath('//head/script[4]/text()')[0])[25:-122]
-    # listinform = str(html.xpath('//head/script[4]/text()')[0].encode('ISO-8859-1').decode('utf-8'))[25:-122]
-    listjson=json.loads(listinform)
-    # 获取视频链接和音频链接
-    try:
-        # 2018年以后的b站视频，音频和视频分离
-        VideoURL = videojson['data']['dash']['video'][0]['baseUrl']
-        AudioURl = videojson['data']['dash']['audio'][0]['baseUrl']
-        flag=0
-    except Exception:
-        # 2018年以前的b站视频，格式为flv
-        VideoURL = videojson['data']['durl'][0]['url']
-        flag=1
-    # 获取文件夹的名称
-    # dirname = str(html.xpath("//h1/@title")[0].encode('ISO-8859-1').decode('utf-8'))
-    # dirname = str(html.xpath("//h1/@title")[0])
-    dirname = bv
-    if not os.path.exists(dirname):
-        # 如果不存在则创建目录
-        # 创建目录操作函数
-        os.makedirs(dirname)
-        print('目录文件创建成功!' + dirname)
-    # 获取每一集的名称
-    # name=listjson['videoData']['pages'][num]['part']
-    name = bv
-    print(name)
-    # 下载视频和音频
-    print('正在下载 "'+name+'" 的视频····')
-    BiliBiliDownload(homeurl=homeurl,url=VideoURL, name=os.getcwd()+'/'+dirname+'/'+name + '_Video.mp4', session=session)
-    if flag==0:
-        print('正在下载 "'+name+'" 的音频····')
-        BiliBiliDownload(homeurl=homeurl,url=AudioURl, name=os.getcwd()+'/'+dirname+'/'+name+ '_Audio.mp3', session=session)
-    
-    
-    print('正在组合 "'+ name +'" 的视频和音频····')
-    real_name = str(html.xpath("//h1/@title")[0])
-    CombineVideoAudio(name + '_Video.mp4',name + '_Audio.mp3', name + '_output.mp4',dirname,real_name)
-    
+
+    if is_json(videoinforms):
+        videojson = json.loads(videoinforms)    
+        # 获取详情信息列表
+        listinform = str(html.xpath('//head/script[4]/text()')[0])[25:-122]
+        # listinform = str(html.xpath('//head/script[4]/text()')[0].encode('ISO-8859-1').decode('utf-8'))[25:-122]
+        listjson=json.loads(listinform)
+        # 获取视频链接和音频链接
+        try:
+            # 2018年以后的b站视频，音频和视频分离
+            VideoURL = videojson['data']['dash']['video'][0]['baseUrl']
+            AudioURl = videojson['data']['dash']['audio'][0]['baseUrl']
+            flag=0
+        except Exception:
+            # 2018年以前的b站视频，格式为flv
+            VideoURL = videojson['data']['durl'][0]['url']
+            flag=1
+        # 获取文件夹的名称
+        # dirname = str(html.xpath("//h1/@title")[0].encode('ISO-8859-1').decode('utf-8'))
+        # dirname = str(html.xpath("//h1/@title")[0])
+        dirname = str(User_Mid) + '\\' + str(bv) 
+        if not os.path.exists(dirname):
+            # 如果不存在则创建目录
+            # 创建目录操作函数
+            os.makedirs(dirname)
+            print('目录文件创建成功!' + dirname)
+        # 获取每一集的名称
+        # name=listjson['videoData']['pages'][num]['part']
+        name = bv
+        # 下载视频和音频
+        print('正在下载 "'+name+'" 的视频····')
+        BiliBiliDownload(homeurl=homeurl,url=VideoURL, name=os.getcwd()+'/'+dirname+'/'+name + '_Video.mp4', session=session)
+        if flag==0:
+            print('正在下载 "'+name+'" 的音频····')
+            BiliBiliDownload(homeurl=homeurl,url=AudioURl, name=os.getcwd()+'/'+dirname+'/'+name+ '_Audio.mp3', session=session)
+        print('正在组合 "'+ name +'" 的视频和音频····')
+        real_name = str(html.xpath("//h1/@title")[0])
+        CombineVideoAudio(name + '_Video.mp4',name + '_Audio.mp3', name + '_output.mp4',dirname,real_name)
+    else:
+        print(bv+'下载失败！！！！！！！！！！！！！！！')
 
 def BiliBiliDownload(homeurl,url, name, session=requests.session()):
     headers.update({'Referer': homeurl})
@@ -184,12 +194,12 @@ def get_current_num(time):
 
 def setting_and_down(bv_id):
     url='https://www.bilibili.com/video/'+ bv_id
-    GetBiliVideo(bv_id,url,0)
+    GetBiliVideo('other',bv_id,url,0)
 
-def setting_and_down_by_av(av):
+def setting_and_down_by_av(User_Mid,av):
     url='https://www.bilibili.com/video/av'+ av
     name = "av" + av
-    GetBiliVideo(name,url,0)
+    GetBiliVideo(User_Mid,name,url,0)
 
 # 从主页拿视频列表的函数
 def get_Mainpage_Video(User_Mid):
@@ -232,36 +242,31 @@ def get_Mainpage_Video(User_Mid):
         return video_List
 
 
-
-
-if __name__ == '__main__':
-
-    # setting_and_down('BV1BW411d7gb')
-
-    User_Mid = 19593619  # 在这里改你的Up主编号
+def setting_and_down_list(User_Mid):
     video_list = get_Mainpage_Video(User_Mid)  # 拿到视频列表
-    # print(video_list)  # 看一下你拿到的视频列表
-    # threads = []
-
+    if not os.path.exists(str(User_Mid)):
+        # 如果不存在则创建目录
+        # 创建目录操作函数
+        os.makedirs(str(User_Mid))
+        print('目录文件创建成功!' + str(User_Mid))
+    json_path = str(User_Mid) + '\\' + str(User_Mid) + '.txt'
+    with open(json_path,"w+") as f:
+        for cfg in video_list:
+            f.write(str(cfg)+'\n')
+        f.close()
     for cfg in video_list:
         print(cfg['aid'])
         print('\n')
         current_av_id = cfg['aid']
-        setting_and_down_by_av(str(current_av_id))
-
-        # current_t = threading.Thread(target=setting_and_down_by_av, args=(str(current_av_id),))
-        # current_t.start()
-        # threads.append(current_t)
+        setting_and_down_by_av(User_Mid,str(current_av_id))
 
 
-    # 等待所有线程完成
-    # for t in threads:
-    #     t.join()
-    # print('\n\n\n')
-    # print('\n\n\n')
-    # print("Exiting Main Thread")
-    # print('\n\n\n')
+if __name__ == '__main__':
 
+    setting_and_down('BV1jb411s7Sn')
+
+    # User_Mid = 402900234  # 在这里改你的Up主编号
+    # setting_and_down_list(User_Mid)
 
 
 
